@@ -181,6 +181,27 @@
           return false;
         }
 
+        // Ensure main website content is visible
+        function ensureMainContentVisible(root) {
+          const appRoot = document.getElementById('root');
+          if (!appRoot) return false;
+          
+          // Make sure the main app root is visible
+          appRoot.style.display = 'block';
+          appRoot.style.visibility = 'visible';
+          
+          // Ensure main content sections are visible
+          const mainSections = root.querySelectorAll('main, section, div[class*="hero"], div[class*="about"], div[class*="service"], div[class*="contact"], footer');
+          mainSections.forEach((section) => {
+            if (section && section !== document.body && !section.closest('[class*="admin"]')) {
+              section.style.display = '';
+              section.style.visibility = '';
+            }
+          });
+          
+          return true;
+        }
+
         // Remove the entire admin/CMS interface completely - runs on all pages
         function removeAdminInterface(root) {
           const appRoot = document.getElementById('root');
@@ -192,7 +213,7 @@
             const txt = (header.textContent || '').trim();
             if (!txt) return;
             
-            // Look for the admin header with "Admin User" and "Last login"
+            // Look for the admin header with "Admin User" and "Last login" - be very specific
             if (/admin\s*user.*last\s*login|last\s*login.*admin\s*user/i.test(txt)) {
               // This is likely the admin header, remove the entire container
               if (header !== document.body && header !== appRoot && !header.contains(appRoot)) {
@@ -204,19 +225,30 @@
             }
           });
           
-          // Also remove any elements with admin interface text
+          // Remove specific admin interface elements more carefully
           const adminElements = root.querySelectorAll('*');
           adminElements.forEach((el) => {
             const txt = (el.textContent || '').trim();
             if (!txt) return;
             
-            // Look for admin interface indicators
-            if (/media\s*gallery|team\s*profiles|content\s*editor|settings|upload\s*new\s*media|existing\s*media|assign\s*category|choose\s*images|choose\s*videos|drag\s*and\s*drop/i.test(txt)) {
-              // Find the main container for the admin interface
-              let container = el.closest('main, section, div, header, nav') || el.parentElement;
+            // Look for specific admin interface indicators - be more precise
+            if (/^(media\s*gallery|team\s*profiles|content\s*editor|settings)$/i.test(txt) || 
+                /upload\s*new\s*media|existing\s*media|assign\s*category|choose\s*images|choose\s*videos|drag\s*and\s*drop/i.test(txt)) {
               
-              // Make sure we don't remove the main app root
-              if (container && container !== document.body && container !== appRoot && !container.contains(appRoot)) {
+              // Find the containing element but be more careful about what we remove
+              let container = el.closest('div, section, main, header, nav') || el.parentElement;
+              
+              // Extra safety checks to protect main content
+              if (container && 
+                  container !== document.body && 
+                  container !== appRoot && 
+                  !container.contains(appRoot) &&
+                  !container.closest('[class*="hero"]') &&
+                  !container.closest('[class*="about"]') &&
+                  !container.closest('[class*="service"]') &&
+                  !container.closest('[class*="contact"]') &&
+                  !container.closest('[class*="footer"]') &&
+                  !container.closest('[class*="header"]:not([class*="admin"])')) {
                 try { 
                   container.remove(); 
                   changed = true; 
@@ -275,6 +307,7 @@
         removeCmsSectionAnywhere(document);
         removeCmsHeaderElements(document);
         removeAdminInterface(document);
+        ensureMainContentVisible(document);
 
         const observer = new MutationObserver(() => {
           removeAdminButtons(document);
@@ -284,6 +317,7 @@
           removeCmsSectionAnywhere(document);
           removeCmsHeaderElements(document);
           removeAdminInterface(document);
+          ensureMainContentVisible(document);
           if (tryRemove()) observer.disconnect();
         });
         observer.observe(document.documentElement, { childList: true, subtree: true });
