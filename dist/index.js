@@ -22,7 +22,7 @@ var MemStorage = class {
       name: "Mr. Demsas Faloppa",
       title: "Founder & Chief Executive Officer",
       bio: "Mr. Faloppa stands as a distinguished professional with a comprehensive educational background and extensive experience in the mining industry. As founder and CEO, he has led Ives Enterprises to become a powerhouse in mining infrastructure and consultancy across East Africa.",
-      profileImageUrl: "https://ivesenterprise.com/wp-content/uploads/2023/11/3-1.png",
+      profileImageUrl: "http://media.ivesenterprise.com/wp-content/uploads/2023/11/3-1.png",
       order: "1",
       createdAt: /* @__PURE__ */ new Date(),
       updatedAt: /* @__PURE__ */ new Date()
@@ -32,7 +32,7 @@ var MemStorage = class {
       name: "Eng. Gift Geza",
       title: "Chief Operational Director",
       bio: "Eng. Gift Geza, a seasoned professional in mechanical engineering, brings a wealth of experience directing several successful mining operations. His expertise in operational excellence ensures that all projects meet the highest technical and quality standards.",
-      profileImageUrl: "https://ivesenterprise.com/wp-content/uploads/2023/11/2.png",
+      profileImageUrl: "http://media.ivesenterprise.com/wp-content/uploads/2023/11/2.png",
       order: "2",
       createdAt: /* @__PURE__ */ new Date(),
       updatedAt: /* @__PURE__ */ new Date()
