@@ -1,0 +1,152 @@
+================================================================================
+IVES ENTERPRISE LIMITED - CPANEL DEPLOYMENT INSTRUCTIONS
+================================================================================
+
+STEP 1: UPLOAD TO CPANEL
+-------------------------
+1. Log into your cPanel at: https://cpanel.ivesenterprise.com/
+2. Go to "File Manager"
+3. Navigate OUTSIDE of public_html (create new folder if needed):
+   - Click "New Folder" button
+   - Name it: "ivesenterprise-app"
+   - Go into this folder
+4. Click "Upload" button
+5. Upload the "ivesenterprise-production.zip" file
+6. After upload completes, select the zip file
+7. Click "Extract" to unzip it
+8. Delete the zip file after extraction
+
+
+STEP 2: SETUP NODE.JS APPLICATION
+----------------------------------
+1. In cPanel, find "Software" section
+2. Click "Setup Node.js App" (or "Node.js Selector")
+3. Click "Create Application" button
+4. Fill in the following:
+
+   Node.js version: 20.x (or latest available)
+   Application mode: Production
+   Application root: ivesenterprise-app
+   Application URL: ivesenterprise.com
+   Application startup file: dist/index.js
+   
+5. Click "Create" button
+
+
+STEP 3: INSTALL DEPENDENCIES
+-----------------------------
+1. After creating the app, you'll see it listed
+2. Find the "Run NPM Install" button
+3. Click it and wait for installation to complete (2-3 minutes)
+4. You should see "Success" when done
+
+
+STEP 4: CONFIGURE ENVIRONMENT VARIABLES
+----------------------------------------
+1. Still in "Setup Node.js App", find your application
+2. Click "Edit" button next to it
+3. Scroll down to "Environment variables" section
+4. Add the following variables (click "+ Add Variable" for each):
+
+   Variable: NODE_ENV
+   Value: production
+
+   Variable: SESSION_SECRET
+   Value: [Create a long random string, at least 32 characters]
+
+   Variable: PORT
+   Value: [Leave empty, cPanel will assign automatically]
+
+5. Click "Save" button
+
+
+STEP 5: START THE APPLICATION
+------------------------------
+1. In the Node.js App list, find your application
+2. Click "Start App" or "Restart" button
+3. Wait for status to show "Running" (green)
+4. If it shows error, click "View Log" to see what went wrong
+
+
+STEP 6: CONFIGURE DOMAIN ROUTING (If Needed)
+---------------------------------------------
+If Application URL in Step 2 was set to your domain, skip this step.
+
+Otherwise:
+1. Go to "File Manager"
+2. Navigate to "public_html"
+3. Create or edit ".htaccess" file
+4. Add this content:
+
+   RewriteEngine On
+   RewriteRule ^(.*)$ http://127.0.0.1:[PORT]/$1 [P,L]
+
+   Replace [PORT] with the port shown in your Node.js App settings
+
+5. Save the file
+
+
+STEP 7: TEST YOUR WEBSITE
+--------------------------
+1. Open your browser
+2. Go to: https://ivesenterprise.com
+3. Check that:
+   - Homepage loads with hero section
+   - All 4 services are displayed
+   - Project gallery shows 34 images with filters
+   - Team section shows 2 members (Demsas Faloppa and Eng. Gift Geza)
+   - Contact form works
+   - Admin section is accessible
+
+
+TROUBLESHOOTING
+---------------
+Website not loading?
+- Check Node.js App status is "Running"
+- Click "View Log" to see errors
+- Verify all dependencies installed successfully
+
+Images not showing?
+- Check that dist/public folder exists
+- Verify file permissions are correct
+- Check browser console for 404 errors
+
+Still having issues?
+- Restart the application
+- Check cPanel error logs
+- Verify your domain DNS is pointing to the server
+
+
+IMPORTANT NOTES
+---------------
+1. The website currently uses IN-MEMORY storage (data resets on restart)
+2. For persistent data, you need to:
+   - Set up PostgreSQL database in cPanel
+   - Add DATABASE_URL environment variable
+   - Contact support to switch to database storage
+
+3. Contact form submissions are stored in memory
+4. Admin uploads use in-memory storage (temporary)
+
+
+UPDATING THE WEBSITE LATER
+---------------------------
+When you need to make changes:
+1. Make changes in Replit
+2. Build new production version
+3. Download new deployment package
+4. Upload and extract to cPanel
+5. Restart Node.js App
+
+
+SECURITY REMINDER
+-----------------
+- Change your cPanel password regularly
+- Never share credentials in chat or email
+- Use strong SESSION_SECRET value
+- Keep Node.js and dependencies updated
+
+
+================================================================================
+Need help? Contact your web developer or cPanel support.
+================================================================================
