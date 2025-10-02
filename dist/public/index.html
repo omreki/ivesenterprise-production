@@ -59,6 +59,31 @@
 
         patchHistory();
 
+        // --- Remove the section immediately after "Get in touch" and before the footer ---
+        function removeAfterGetInTouch(root) {
+          const headings = root.querySelectorAll('h1, h2, h3, h4');
+          let targetSection = null;
+          for (const h of headings) {
+            const txt = (h.textContent || '').trim();
+            if (/^get\s*in\s*touch$/i.test(txt)) {
+              const container = h.closest('section, div, main') || h.parentElement;
+              if (!container) break;
+              // Walk to the next element siblings until we hit a footer; remove the first section-like block
+              let node = container.nextElementSibling;
+              const footer = root.querySelector('footer');
+              while (node && node !== footer) {
+                if (node.matches && node.matches('section, div')) { targetSection = node; break; }
+                node = node.nextElementSibling;
+              }
+              break;
+            }
+          }
+          if (targetSection) {
+            try { targetSection.remove(); return true; } catch (_) { return false; }
+          }
+          return false;
+        }
+
         function safeContainer(node) {
           if (!node) return null;
           const root = document.getElementById('root');
@@ -73,28 +98,29 @@
           for (const h of headings) {
             const txt = (h.textContent || '').trim();
             if (!txt || !/Upload\s+New\s+Media/i.test(txt)) continue;
-            // Require that the same section also has the specific buttons to avoid over-removal
             const scope = h.closest('section, div') || h.parentElement;
             if (!scope) continue;
             const hasButtons = scope.querySelector('button, a');
-            const hasChoose = scope.querySelector('button, a, input') && /Choose Images|Choose Videos/i.test(scope.textContent || '');
+            const hasChoose = /Choose Images|Choose Videos/i.test(scope.textContent || '');
             if (!hasButtons || !hasChoose) continue;
             const container = safeContainer(scope) || safeContainer(scope.parentElement) || scope;
             try {
               container.remove();
               return true;
-            } catch (_) {}
+            } catch (_) { /* noop */ }
           }
           return false;
         }
 
         const tryRemove = () => removeUploadSection(document);
-        // Also remove Admin buttons in header if present
+        // Also remove Admin buttons in header if present, and the section after "Get in touch"
         removeAdminButtons(document);
+        removeAfterGetInTouch(document);
         if (tryRemove()) return;
 
         const observer = new MutationObserver(() => {
           removeAdminButtons(document);
+          removeAfterGetInTouch(document);
           if (tryRemove()) observer.disconnect();
         });
         observer.observe(document.documentElement, { childList: true, subtree: true });
