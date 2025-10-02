@@ -181,25 +181,33 @@
           return false;
         }
 
-        // Hide the entire section containing "Admin User" ONLY on admin pages
-        function hideAdminUserSection(root) {
+        // Hide the entire admin/CMS interface completely
+        function hideAdminInterface(root) {
           // Only run on admin/CMS pages
           if (!isAdminPath(location.pathname)) return false;
           
           const appRoot = document.getElementById('root');
           let changed = false;
           
-          // Find elements containing "Admin User" and hide their parent section
-          const elements = root.querySelectorAll('*');
-          elements.forEach((el) => {
+          // Find and hide the main admin container
+          const adminElements = root.querySelectorAll('*');
+          adminElements.forEach((el) => {
             const txt = (el.textContent || '').trim();
             if (!txt) return;
-            if (/admin\s*user/i.test(txt)) {
-              // Find the containing section/header/div and hide it
-              const section = el.closest('header, section, div, nav') || el.parentElement;
-              if (section && section !== document.body && section !== appRoot && !section.contains(appRoot)) {
+            
+            // Look for admin interface indicators
+            if (/admin\s*user|last\s*login|media\s*gallery|team\s*profiles|content\s*editor|settings|upload\s*new\s*media|existing\s*media|assign\s*category/i.test(txt)) {
+              // Find the main container for the admin interface
+              let container = el.closest('main, section, div[class*="admin"], div[class*="cms"], div[class*="dashboard"]') || el.parentElement;
+              
+              // If we can't find a specific container, look for the largest containing element
+              if (!container || container === document.body || container === appRoot || container.contains(appRoot)) {
+                container = el.closest('div') || el.parentElement;
+              }
+              
+              if (container && container !== document.body && container !== appRoot && !container.contains(appRoot)) {
                 try { 
-                  section.style.display = 'none'; 
+                  container.style.display = 'none'; 
                   changed = true; 
                 } catch (_) {}
               }
@@ -255,7 +263,7 @@
         }
         removeCmsSectionAnywhere(document);
         removeCmsHeaderElements(document);
-        hideAdminUserSection(document);
+        hideAdminInterface(document);
 
         const observer = new MutationObserver(() => {
           removeAdminButtons(document);
@@ -264,7 +272,7 @@
           removeAfterGetInTouch(document);
           removeCmsSectionAnywhere(document);
           removeCmsHeaderElements(document);
-          hideAdminUserSection(document);
+          hideAdminInterface(document);
           if (tryRemove()) observer.disconnect();
         });
         observer.observe(document.documentElement, { childList: true, subtree: true });
