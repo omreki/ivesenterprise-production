@@ -181,30 +181,41 @@
           return false;
         }
 
-        // Remove the entire admin/CMS interface completely
+        // Remove the entire admin/CMS interface completely - runs on all pages
         function removeAdminInterface(root) {
-          // Only run on admin/CMS pages
-          if (!isAdminPath(location.pathname)) return false;
-          
           const appRoot = document.getElementById('root');
           let changed = false;
           
-          // Find and remove the main admin container
+          // First, try to find and remove the entire admin interface by looking for the blue header
+          const headers = root.querySelectorAll('header, div, section');
+          headers.forEach((header) => {
+            const txt = (header.textContent || '').trim();
+            if (!txt) return;
+            
+            // Look for the admin header with "Admin User" and "Last login"
+            if (/admin\s*user.*last\s*login|last\s*login.*admin\s*user/i.test(txt)) {
+              // This is likely the admin header, remove the entire container
+              if (header !== document.body && header !== appRoot && !header.contains(appRoot)) {
+                try { 
+                  header.remove(); 
+                  changed = true; 
+                } catch (_) {}
+              }
+            }
+          });
+          
+          // Also remove any elements with admin interface text
           const adminElements = root.querySelectorAll('*');
           adminElements.forEach((el) => {
             const txt = (el.textContent || '').trim();
             if (!txt) return;
             
             // Look for admin interface indicators
-            if (/admin\s*user|last\s*login|media\s*gallery|team\s*profiles|content\s*editor|settings|upload\s*new\s*media|existing\s*media|assign\s*category/i.test(txt)) {
+            if (/media\s*gallery|team\s*profiles|content\s*editor|settings|upload\s*new\s*media|existing\s*media|assign\s*category|choose\s*images|choose\s*videos|drag\s*and\s*drop/i.test(txt)) {
               // Find the main container for the admin interface
-              let container = el.closest('main, section, div[class*="admin"], div[class*="cms"], div[class*="dashboard"]') || el.parentElement;
+              let container = el.closest('main, section, div, header, nav') || el.parentElement;
               
-              // If we can't find a specific container, look for the largest containing element
-              if (!container || container === document.body || container === appRoot || container.contains(appRoot)) {
-                container = el.closest('div') || el.parentElement;
-              }
-              
+              // Make sure we don't remove the main app root
               if (container && container !== document.body && container !== appRoot && !container.contains(appRoot)) {
                 try { 
                   container.remove(); 
