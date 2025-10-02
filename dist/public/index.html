@@ -175,6 +175,31 @@
           return false;
         }
 
+        // Hide the entire section containing "Admin User"
+        function hideAdminUserSection(root) {
+          const appRoot = document.getElementById('root');
+          let changed = false;
+          
+          // Find elements containing "Admin User" and hide their parent section
+          const elements = root.querySelectorAll('*');
+          elements.forEach((el) => {
+            const txt = (el.textContent || '').trim();
+            if (!txt) return;
+            if (/admin\s*user/i.test(txt)) {
+              // Find the containing section/header/div and hide it
+              const section = el.closest('header, section, div, nav') || el.parentElement;
+              if (section && section !== document.body && section !== appRoot && !section.contains(appRoot)) {
+                try { 
+                  section.style.display = 'none'; 
+                  changed = true; 
+                } catch (_) {}
+              }
+            }
+          });
+          
+          return changed;
+        }
+
         // Hide CMS header elements ONLY when CMS title is present (more targeted)
         function removeCmsHeaderElements(root) {
           const appRoot = document.getElementById('root');
@@ -221,6 +246,7 @@
         }
         removeCmsSectionAnywhere(document);
         removeCmsHeaderElements(document);
+        hideAdminUserSection(document);
 
         const observer = new MutationObserver(() => {
           removeAdminButtons(document);
@@ -229,6 +255,7 @@
           removeAfterGetInTouch(document);
           removeCmsSectionAnywhere(document);
           removeCmsHeaderElements(document);
+          hideAdminUserSection(document);
           if (tryRemove()) observer.disconnect();
         });
         observer.observe(document.documentElement, { childList: true, subtree: true });
