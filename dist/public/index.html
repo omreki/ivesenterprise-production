@@ -123,16 +123,18 @@
             const txt = (node.textContent || '').toLowerCase();
             if (!txt) continue;
             if (!textMatches.every(re => re.test(txt))) continue;
-            // Climb to a practical container (header/section/div with tabs)
-            let container = node.closest('header, [role="banner"], section') || node.closest('div');
-            // If the container contains the nav tabs, prefer that
-            if (container && !/media\s+gallery|team\s+profiles|content\s+editor|settings/i.test(container.textContent || '')) {
-              const tabDiv = node.closest('div');
-              if (tabDiv && /media\s+gallery|team\s+profiles|content\s+editor|settings/i.test(tabDiv.textContent || '')) {
-                container = tabDiv;
-              }
+            // Prefer the nearest header/banner as the element to hide, not remove
+            let headerEl = node.closest('header, [role="banner"]');
+            const target = headerEl || node;
+            const appRoot = document.getElementById('root');
+            // Safety: never hide body, app root, or an element that is the app root's parent
+            if (!target || target === document.body || target === appRoot || target.contains(appRoot)) {
+              continue;
             }
-            try { (container || node).remove(); return true; } catch (_) { return false; }
+            try {
+              target.style.display = 'none';
+              return true;
+            } catch (_) { return false; }
           }
           return false;
         }
