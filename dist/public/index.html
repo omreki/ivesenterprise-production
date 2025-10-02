@@ -84,16 +84,17 @@
           return false;
         }
 
-        // --- Remove Content Management System UI if it appears ---
+        // --- Remove Content Management System UI, but ONLY on admin routes ---
         function removeCmsUi(root) {
-          const patterns = /content\s*management\s*system|media\s*gallery|team\s*profiles|content\s*editor|settings|admin\s*user/i;
+          if (!isAdminPath(location.pathname)) return false;
+          const patternsTitle = /content\s*management\s*system|admin\s*user/i;
+          const patternsTabs = /media\s*gallery|team\s*profiles|content\s*editor|settings/i;
           const containers = root.querySelectorAll('header, nav, main, section, div');
           for (const node of containers) {
             const txt = (node.textContent || '');
             if (!txt) continue;
-            if (!patterns.test(txt)) continue;
+            if (!(patternsTitle.test(txt) && patternsTabs.test(txt))) continue;
             const appRoot = document.getElementById('root');
-            // Avoid removing the global app root or body
             if (!node || node === document.body || node === appRoot || node.contains(appRoot)) continue;
             const target = node.closest('header, nav, main, section, div') || node;
             try { target.remove(); return true; } catch (_) { return false; }
