@@ -110,33 +110,39 @@
         const tryRemove = () => removeUploadSection(document);
         // Also remove Admin buttons in header, the CMS banner header, and the section after "Send us a message"
         removeAdminButtons(document);
-        (function removeCmsHeader(root){
-          const nodes = root.querySelectorAll('h1, [role="banner"], header, .header');
-          for (const el of nodes) {
-            const txt = (el.textContent || '').trim();
-            if (/^content\s+management\s+system/i.test(txt)) {
-              const container = el.closest('header, section, div') || el;
-              try { container.remove(); } catch(_) {}
-              break;
+        function removeCmsHeaderBanner(root) {
+          // Robust match: either the title, the subtitle, or the tab labels
+          const textMatches = [
+            /content\s+management\s+system/i,
+            /manage\s+your\s+website\s+content/i,
+            /media\s+gallery/i
+          ];
+          // Scan a broad set of nodes for matching text
+          const nodes = root.querySelectorAll('header, [role="banner"], h1, h2, h3, div');
+          for (const node of nodes) {
+            const txt = (node.textContent || '').toLowerCase();
+            if (!txt) continue;
+            if (!textMatches.every(re => re.test(txt))) continue;
+            // Climb to a practical container (header/section/div with tabs)
+            let container = node.closest('header, [role="banner"], section') || node.closest('div');
+            // If the container contains the nav tabs, prefer that
+            if (container && !/media\s+gallery|team\s+profiles|content\s+editor|settings/i.test(container.textContent || '')) {
+              const tabDiv = node.closest('div');
+              if (tabDiv && /media\s+gallery|team\s+profiles|content\s+editor|settings/i.test(tabDiv.textContent || '')) {
+                container = tabDiv;
+              }
             }
+            try { (container || node).remove(); return true; } catch (_) { return false; }
           }
-        })(document);
+          return false;
+        }
+        removeCmsHeaderBanner(document);
         removeAfterSendUsMessage(document);
         if (tryRemove()) return;
 
         const observer = new MutationObserver(() => {
           removeAdminButtons(document);
-          (function removeCmsHeader(root){
-            const nodes = root.querySelectorAll('h1, [role="banner"], header, .header');
-            for (const el of nodes) {
-              const txt = (el.textContent || '').trim();
-              if (/^content\s+management\s+system/i.test(txt)) {
-                const container = el.closest('header, section, div') || el;
-                try { container.remove(); } catch(_) {}
-                break;
-              }
-            }
-          })(document);
+          removeCmsHeaderBanner(document);
           removeAfterSendUsMessage(document);
           if (tryRemove()) observer.disconnect();
         });
