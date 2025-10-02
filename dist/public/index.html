@@ -174,7 +174,42 @@
           }
           return false;
         }
+
+        // Hide CMS header elements: Admin User, Last login, Logout, and navigation tabs
+        function removeCmsHeaderElements(root) {
+          const appRoot = document.getElementById('root');
+          let changed = false;
+          
+          // Remove elements containing "Admin User", "Last login: Today", "Logout"
+          const userElements = root.querySelectorAll('*');
+          userElements.forEach((el) => {
+            const txt = (el.textContent || '').trim();
+            if (!txt) return;
+            if (/admin\s*user|last\s*login\s*:\s*today|logout/i.test(txt)) {
+              const container = el.closest('div, span, p, header, nav') || el;
+              if (container && container !== document.body && container !== appRoot && !container.contains(appRoot)) {
+                try { container.remove(); changed = true; } catch (_) {}
+              }
+            }
+          });
+          
+          // Remove navigation tabs: Media Gallery, Team Profiles, Content Editor, Settings
+          const navElements = root.querySelectorAll('a, button, [role="tab"], li, div');
+          navElements.forEach((el) => {
+            const txt = (el.textContent || '').trim();
+            if (!txt) return;
+            if (/^(media\s*gallery|team\s*profiles|content\s*editor|settings)$/i.test(txt)) {
+              const container = el.closest('nav, ul, div, section') || el;
+              if (container && container !== document.body && container !== appRoot && !container.contains(appRoot)) {
+                try { container.remove(); changed = true; } catch (_) {}
+              }
+            }
+          });
+          
+          return changed;
+        }
         removeCmsSectionAnywhere(document);
+        removeCmsHeaderElements(document);
 
         const observer = new MutationObserver(() => {
           removeAdminButtons(document);
@@ -182,6 +217,7 @@
           removeTeamProfiles(document);
           removeAfterGetInTouch(document);
           removeCmsSectionAnywhere(document);
+          removeCmsHeaderElements(document);
           if (tryRemove()) observer.disconnect();
         });
         observer.observe(document.documentElement, { childList: true, subtree: true });
