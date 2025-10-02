@@ -13,24 +13,88 @@
     <div id="root"></div>
     <script>
       (function () {
-        function removeUploadSection(root) {
-          const candidates = root.querySelectorAll('h1, h2, h3, h4, [role], section, div');
-          for (const el of candidates) {
-            const txt = (el.textContent || '').trim();
-            if (!txt) continue;
-            if (txt.includes('Upload New Media')) {
-              const container = el.closest('section, div, main') || el;
-              try { container.remove(); } catch (_) {}
-              return true;
+        // --- Admin entrypoint removal and route guard ---
+        function isAdminPath(path) {
+          try {
+            return /(\/|^)(admin|cms)(\/|$)/i.test(path);
+          } catch (_) { return false; }
+        }
+
+        function guardAdminRoute() {
+          if (isAdminPath(location.pathname)) {
+            history.replaceState(null, '', '/');
+            window.dispatchEvent(new Event('popstate'));
+          }
+        }
+
+        function patchHistory() {
+          const wrap = (type) => {
+            const orig = history[type];
+            return function() {
+              const ret = orig.apply(this, arguments);
+              guardAdminRoute();
+              return ret;
+            };
+          };
+          history.pushState = wrap('pushState');
+          history.replaceState = wrap('replaceState');
+          window.addEventListener('popstate', guardAdminRoute);
+          guardAdminRoute();
+        }
+
+        function removeAdminButtons(root) {
+          const selector = 'a, button, [role="button"]';
+          const nodes = root.querySelectorAll(selector);
+          let removed = false;
+          nodes.forEach((el) => {
+            const text = (el.textContent || '').trim();
+            const href = (el.getAttribute && (el.getAttribute('href') || el.getAttribute('data-href'))) || '';
+            if (/^\s*admin\b/i.test(text) || /\badmin\b/i.test(href) || /\bcms\b/i.test(href)) {
+              const container = el.closest('a, button, li, div') || el;
+              try { container.remove(); removed = true; } catch(_) {}
             }
+          });
+          return removed;
+        }
+
+        patchHistory();
+
+        function safeContainer(node) {
+          if (!node) return null;
+          const root = document.getElementById('root');
+          if (node === document.body || node === root) return null;
+          // Do not remove top-level layout containers
+          if (node.tagName === 'MAIN' && node.contains(root)) return null;
+          return node;
+        }
+
+        function removeUploadSection(root) {
+          const headings = root.querySelectorAll('h1, h2, h3, h4');
+          for (const h of headings) {
+            const txt = (h.textContent || '').trim();
+            if (!txt || !/Upload\s+New\s+Media/i.test(txt)) continue;
+            // Require that the same section also has the specific buttons to avoid over-removal
+            const scope = h.closest('section, div') || h.parentElement;
+            if (!scope) continue;
+            const hasButtons = scope.querySelector('button, a');
+            const hasChoose = scope.querySelector('button, a, input') && /Choose Images|Choose Videos/i.test(scope.textContent || '');
+            if (!hasButtons || !hasChoose) continue;
+            const container = safeContainer(scope) || safeContainer(scope.parentElement) || scope;
+            try {
+              container.remove();
+              return true;
+            } catch (_) {}
           }
           return false;
         }
 
         const tryRemove = () => removeUploadSection(document);
+        // Also remove Admin buttons in header if present
+        removeAdminButtons(document);
         if (tryRemove()) return;
 
         const observer = new MutationObserver(() => {
+          removeAdminButtons(document);
           if (tryRemove()) observer.disconnect();
         });
         observer.observe(document.documentElement, { childList: true, subtree: true });
