@@ -11,5 +11,30 @@
   </head>
   <body>
     <div id="root"></div>
+    <script>
+      (function () {
+        function removeUploadSection(root) {
+          const candidates = root.querySelectorAll('h1, h2, h3, h4, [role], section, div');
+          for (const el of candidates) {
+            const txt = (el.textContent || '').trim();
+            if (!txt) continue;
+            if (txt.includes('Upload New Media')) {
+              const container = el.closest('section, div, main') || el;
+              try { container.remove(); } catch (_) {}
+              return true;
+            }
+          }
+          return false;
+        }
+
+        const tryRemove = () => removeUploadSection(document);
+        if (tryRemove()) return;
+
+        const observer = new MutationObserver(() => {
+          if (tryRemove()) observer.disconnect();
+        });
+        observer.observe(document.documentElement, { childList: true, subtree: true });
+      })();
+    </script>
   </body>
 </html>
