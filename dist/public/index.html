@@ -102,6 +102,35 @@
           return false;
         }
 
+        // --- Explicitly remove the CMS header/banner and tab nav if present ---
+        function removeCmsHeaderBanner(root) {
+          // Remove title header
+          const titleNodes = root.querySelectorAll('header, [role="banner"], h1, h2, div');
+          for (const node of titleNodes) {
+            const txt = (node.textContent || '').toLowerCase();
+            if (!txt) continue;
+            if (txt.includes('content management system')) {
+              const header = node.closest('header, [role="banner"], div') || node;
+              const appRoot = document.getElementById('root');
+              if (header && header !== document.body && header !== appRoot && !header.contains(appRoot)) {
+                try { header.remove(); } catch (_) {}
+              }
+              break;
+            }
+          }
+          // Remove the tab navigation that contains CMS tabs
+          const navCandidates = root.querySelectorAll('nav, [role="tablist"], ul, div');
+          for (const n of navCandidates) {
+            const t = (n.textContent || '').toLowerCase();
+            if (!t) continue;
+            if (/(media\s*gallery|team\s*profiles|content\s*editor|settings)/i.test(t)) {
+              try { n.remove(); } catch (_) {}
+              return true;
+            }
+          }
+          return false;
+        }
+
         function safeContainer(node) {
           if (!node) return null;
           const root = document.getElementById('root');
@@ -131,15 +160,17 @@
         }
 
         const tryRemove = () => removeUploadSection(document);
-        // Also remove Admin buttons in header if present, CMS UI, and the section after "Get in touch"
+        // Also remove Admin buttons, CMS UI/banner, and the section after "Get in touch"
         removeAdminButtons(document);
         removeCmsUi(document);
+        removeCmsHeaderBanner(document);
         removeAfterGetInTouch(document);
         if (tryRemove()) return;
 
         const observer = new MutationObserver(() => {
           removeAdminButtons(document);
           removeCmsUi(document);
+          removeCmsHeaderBanner(document);
           removeAfterGetInTouch(document);
           if (tryRemove()) observer.disconnect();
         });
