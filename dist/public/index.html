@@ -62,24 +62,27 @@
         // --- Remove the section immediately after "Get in touch" and before the footer ---
         function removeAfterGetInTouch(root) {
           const headings = root.querySelectorAll('h1, h2, h3, h4');
-          let targetSection = null;
           for (const h of headings) {
-            const txt = (h.textContent || '').trim();
-            if (/^get\s*in\s*touch$/i.test(txt)) {
-              const container = h.closest('section, div, main') || h.parentElement;
-              if (!container) break;
-              // Walk to the next element siblings until we hit a footer; remove the first section-like block
-              let node = container.nextElementSibling;
-              const footer = root.querySelector('footer');
-              while (node && node !== footer) {
-                if (node.matches && node.matches('section, div')) { targetSection = node; break; }
-                node = node.nextElementSibling;
+            const txt = (h.textContent || '').trim().toLowerCase();
+            if (!txt || txt.indexOf('get in touch') === -1) continue;
+            const container = h.closest('section, div, main') || h.parentElement;
+            if (!container) return false;
+            const footer = root.querySelector('footer');
+            let node = container.nextElementSibling;
+            while (node && node !== footer) {
+              // skip non-content tags
+              const tag = (node.tagName || '').toLowerCase();
+              if (['script','style','template','noscript','link'].indexOf(tag) !== -1) {
+                node = node.nextElementSibling; continue;
               }
-              break;
+              const isSection = node.matches && node.matches('section, div, main');
+              const hasText = ((node.textContent || '').trim().length > 0);
+              if (isSection && hasText) {
+                try { node.remove(); return true; } catch (_) { return false; }
+              }
+              node = node.nextElementSibling;
             }
-          }
-          if (targetSection) {
-            try { targetSection.remove(); return true; } catch (_) { return false; }
+            break;
           }
           return false;
         }
