@@ -59,6 +59,48 @@
 
         patchHistory();
 
+        // --- Remove the section immediately after "Get in touch" and before the footer ---
+        function removeAfterGetInTouch(root) {
+          const headings = root.querySelectorAll('h1, h2, h3, h4');
+          let targetSection = null;
+          for (const h of headings) {
+            const txt = (h.textContent || '').trim();
+            if (/^get\s*in\s*touch$/i.test(txt)) {
+              const container = h.closest('section, div, main') || h.parentElement;
+              if (!container) break;
+              // Walk to the next element siblings until we hit a footer; remove the first section-like block
+              let node = container.nextElementSibling;
+              const footer = root.querySelector('footer');
+              while (node && node !== footer) {
+                if (node.matches && node.matches('section, div')) { targetSection = node; break; }
+                node = node.nextElementSibling;
+              }
+              break;
+            }
+          }
+          if (targetSection) {
+            try { targetSection.remove(); return true; } catch (_) { return false; }
+          }
+          return false;
+        }
+
+        // --- Remove Content Management System UI if it appears ---
+        function removeCmsUi(root) {
+          const patterns = /content\s*management\s*system|media\s*gallery|team\s*profiles|content\s*editor|settings|admin\s*user/i;
+          const containers = root.querySelectorAll('header, nav, main, section, div');
+          for (const node of containers) {
+            const txt = (node.textContent || '');
+            if (!txt) continue;
+            if (!patterns.test(txt)) continue;
+            const appRoot = document.getElementById('root');
+            // Avoid removing the global app root or body
+            if (!node || node === document.body || node === appRoot || node.contains(appRoot)) continue;
+            const target = node.closest('header, nav, main, section, div') || node;
+            try { target.remove(); return true; } catch (_) { return false; }
+          }
+          return false;
+        }
+
         function safeContainer(node) {
           if (!node) return null;
           const root = document.getElementById('root');
@@ -68,72 +110,36 @@
           return node;
         }
 
-        // Remove the section immediately following the "Send us a message" block
-        function removeAfterSendUsMessage(root) {
-          const headings = root.querySelectorAll('h1, h2, h3, h4');
-          for (const h of headings) {
-            const txt = (h.textContent || '').trim();
-            if (!/^send\s*us\s*a\s*message$/i.test(txt)) continue;
-            const container = h.closest('section, div, main') || h.parentElement;
-            if (!container) return false;
-            let node = container.nextElementSibling;
-            while (node && node.tagName && node.tagName.toLowerCase() === 'script') node = node.nextElementSibling;
-            if (node && (node.matches && node.matches('section, div'))) {
-              const candidate = safeContainer(node) || node;
-              try { candidate.remove(); return true; } catch (_) { return false; }
-            }
-            return false;
-          }
-          return false;
-        }
-
         function removeUploadSection(root) {
           const headings = root.querySelectorAll('h1, h2, h3, h4');
           for (const h of headings) {
             const txt = (h.textContent || '').trim();
             if (!txt || !/Upload\s+New\s+Media/i.test(txt)) continue;
-            // Require that the same section also has the specific buttons to avoid over-removal
             const scope = h.closest('section, div') || h.parentElement;
             if (!scope) continue;
             const hasButtons = scope.querySelector('button, a');
-            const hasChoose = scope.querySelector('button, a, input') && /Choose Images|Choose Videos/i.test(scope.textContent || '');
+            const hasChoose = /Choose Images|Choose Videos/i.test(scope.textContent || '');
             if (!hasButtons || !hasChoose) continue;
             const container = safeContainer(scope) || safeContainer(scope.parentElement) || scope;
             try {
               container.remove();
               return true;
-            } catch (_) {}
+            } catch (_) { /* noop */ }
           }
           return false;
         }
 
         const tryRemove = () => removeUploadSection(document);
-        // Also remove Admin buttons in header, the CMS banner header, and the section after "Send us a message"
+        // Also remove Admin buttons in header if present, CMS UI, and the section after "Get in touch"
         removeAdminButtons(document);
-        function removeCmsHeaderBanner(root) {
-          // Loosened detection: title or admin label + nav tabs
-          const hasTitleOrAdmin = /(content\s+management\s+system|admin\s+user)/i;
-          const hasTabs = /(media\s+gallery|team\s+profiles|content\s+editor|settings)/i;
-          const nodes = root.querySelectorAll('header, nav, [role="banner"], div');
-          for (const node of nodes) {
-            const txt = (node.textContent || '');
-            if (!txt) continue;
-            if (!(hasTitleOrAdmin.test(txt) && hasTabs.test(txt))) continue;
-            let target = node.closest('header, nav, [role="banner"]') || node;
-            const appRoot = document.getElementById('root');
-            if (!target || target === document.body || target === appRoot || target.contains(appRoot)) continue;
-            try { target.style.display = 'none'; return true; } catch (_) { return false; }
-          }
-          return false;
-        }
-        removeCmsHeaderBanner(document);
-        removeAfterSendUsMessage(document);
+        removeCmsUi(document);
+        removeAfterGetInTouch(document);
         if (tryRemove()) return;
 
         const observer = new MutationObserver(() => {
           removeAdminButtons(document);
-          removeCmsHeaderBanner(document);
-          removeAfterSendUsMessage(document);
+          removeCmsUi(document);
+          removeAfterGetInTouch(document);
           if (tryRemove()) observer.disconnect();
         });
         observer.observe(document.documentElement, { childList: true, subtree: true });
