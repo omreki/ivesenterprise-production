@@ -108,13 +108,35 @@
         }
 
         const tryRemove = () => removeUploadSection(document);
-        // Also remove Admin buttons in header if present and the section after "Send us a message"
+        // Also remove Admin buttons in header, the CMS banner header, and the section after "Send us a message"
         removeAdminButtons(document);
+        (function removeCmsHeader(root){
+          const nodes = root.querySelectorAll('h1, [role="banner"], header, .header');
+          for (const el of nodes) {
+            const txt = (el.textContent || '').trim();
+            if (/^content\s+management\s+system/i.test(txt)) {
+              const container = el.closest('header, section, div') || el;
+              try { container.remove(); } catch(_) {}
+              break;
+            }
+          }
+        })(document);
         removeAfterSendUsMessage(document);
         if (tryRemove()) return;
 
         const observer = new MutationObserver(() => {
           removeAdminButtons(document);
+          (function removeCmsHeader(root){
+            const nodes = root.querySelectorAll('h1, [role="banner"], header, .header');
+            for (const el of nodes) {
+              const txt = (el.textContent || '').trim();
+              if (/^content\s+management\s+system/i.test(txt)) {
+                const container = el.closest('header, section, div') || el;
+                try { container.remove(); } catch(_) {}
+                break;
+              }
+            }
+          })(document);
           removeAfterSendUsMessage(document);
           if (tryRemove()) observer.disconnect();
         });
