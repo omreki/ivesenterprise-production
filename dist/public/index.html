@@ -186,16 +186,35 @@
           const appRoot = document.getElementById('root');
           if (!appRoot) return false;
           
-          // Make sure the main app root is visible
-          appRoot.style.display = 'block';
-          appRoot.style.visibility = 'visible';
+          // Force the main app root to be visible
+          appRoot.style.display = 'block !important';
+          appRoot.style.visibility = 'visible !important';
+          appRoot.style.opacity = '1 !important';
+          appRoot.style.height = 'auto !important';
+          appRoot.style.minHeight = '100vh !important';
           
-          // Ensure main content sections are visible
-          const mainSections = root.querySelectorAll('main, section, div[class*="hero"], div[class*="about"], div[class*="service"], div[class*="contact"], footer');
-          mainSections.forEach((section) => {
-            if (section && section !== document.body && !section.closest('[class*="admin"]')) {
-              section.style.display = '';
-              section.style.visibility = '';
+          // Make sure body and html are visible
+          document.body.style.display = 'block !important';
+          document.body.style.visibility = 'visible !important';
+          document.documentElement.style.display = 'block !important';
+          document.documentElement.style.visibility = 'visible !important';
+          
+          // Ensure all main content sections are visible
+          const allElements = root.querySelectorAll('*');
+          allElements.forEach((element) => {
+            if (element && element !== document.body && element !== appRoot) {
+              // Skip admin elements
+              const txt = (element.textContent || '').trim();
+              if (/admin\s*user|last\s*login|media\s*gallery|team\s*profiles|content\s*editor|settings|upload\s*new\s*media|existing\s*media|assign\s*category/i.test(txt)) {
+                return; // Skip admin elements
+              }
+              
+              // Make sure non-admin elements are visible
+              element.style.display = '';
+              element.style.visibility = '';
+              element.style.opacity = '';
+              element.style.height = '';
+              element.style.minHeight = '';
             }
           });
           
@@ -304,10 +323,27 @@
           
           return changed;
         }
+        // Force immediate visibility
+        (function() {
+          const appRoot = document.getElementById('root');
+          if (appRoot) {
+            appRoot.style.display = 'block !important';
+            appRoot.style.visibility = 'visible !important';
+            appRoot.style.opacity = '1 !important';
+          }
+          document.body.style.display = 'block !important';
+          document.body.style.visibility = 'visible !important';
+        })();
+
         removeCmsSectionAnywhere(document);
         removeCmsHeaderElements(document);
         removeAdminInterface(document);
         ensureMainContentVisible(document);
+
+        // Also run after a short delay to catch any late-loading content
+        setTimeout(() => {
+          ensureMainContentVisible(document);
+        }, 100);
 
         const observer = new MutationObserver(() => {
           removeAdminButtons(document);
