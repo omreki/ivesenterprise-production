@@ -68,6 +68,25 @@
           return node;
         }
 
+        // Remove the section immediately following the "Send us a message" block
+        function removeAfterSendUsMessage(root) {
+          const headings = root.querySelectorAll('h1, h2, h3, h4');
+          for (const h of headings) {
+            const txt = (h.textContent || '').trim();
+            if (!/^send\s*us\s*a\s*message$/i.test(txt)) continue;
+            const container = h.closest('section, div, main') || h.parentElement;
+            if (!container) return false;
+            let node = container.nextElementSibling;
+            while (node && node.tagName && node.tagName.toLowerCase() === 'script') node = node.nextElementSibling;
+            if (node && (node.matches && node.matches('section, div'))) {
+              const candidate = safeContainer(node) || node;
+              try { candidate.remove(); return true; } catch (_) { return false; }
+            }
+            return false;
+          }
+          return false;
+        }
+
         function removeUploadSection(root) {
           const headings = root.querySelectorAll('h1, h2, h3, h4');
           for (const h of headings) {
@@ -89,12 +108,14 @@
         }
 
         const tryRemove = () => removeUploadSection(document);
-        // Also remove Admin buttons in header if present
+        // Also remove Admin buttons in header if present and the section after "Send us a message"
         removeAdminButtons(document);
+        removeAfterSendUsMessage(document);
         if (tryRemove()) return;
 
         const observer = new MutationObserver(() => {
           removeAdminButtons(document);
+          removeAfterSendUsMessage(document);
           if (tryRemove()) observer.disconnect();
         });
         observer.observe(document.documentElement, { childList: true, subtree: true });
