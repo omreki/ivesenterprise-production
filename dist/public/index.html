@@ -161,11 +161,27 @@
         removeAfterGetInTouch(document);
         if (tryRemove()) return;
 
+        // Hide any visible CMS section on non-admin pages by title match
+        function removeCmsSectionAnywhere(root) {
+          const headings = root.querySelectorAll('h1,h2,h3,h4');
+          for (const h of headings) {
+            const txt = (h.textContent || '').trim();
+            if (!/^content\s*management\s*system$/i.test(txt)) continue;
+            const appRoot = document.getElementById('root');
+            const container = h.closest('section,div,main') || h.parentElement;
+            if (!container || container === document.body || container === appRoot) continue;
+            try { container.remove(); return true; } catch (_) { return false; }
+          }
+          return false;
+        }
+        removeCmsSectionAnywhere(document);
+
         const observer = new MutationObserver(() => {
           removeAdminButtons(document);
           removeCmsUi(document);
           removeTeamProfiles(document);
           removeAfterGetInTouch(document);
+          removeCmsSectionAnywhere(document);
           if (tryRemove()) observer.disconnect();
         });
         observer.observe(document.documentElement, { childList: true, subtree: true });
