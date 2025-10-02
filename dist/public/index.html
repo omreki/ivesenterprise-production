@@ -181,15 +181,15 @@
           return false;
         }
 
-        // Hide the entire admin/CMS interface completely
-        function hideAdminInterface(root) {
+        // Remove the entire admin/CMS interface completely
+        function removeAdminInterface(root) {
           // Only run on admin/CMS pages
           if (!isAdminPath(location.pathname)) return false;
           
           const appRoot = document.getElementById('root');
           let changed = false;
           
-          // Find and hide the main admin container
+          // Find and remove the main admin container
           const adminElements = root.querySelectorAll('*');
           adminElements.forEach((el) => {
             const txt = (el.textContent || '').trim();
@@ -207,7 +207,7 @@
               
               if (container && container !== document.body && container !== appRoot && !container.contains(appRoot)) {
                 try { 
-                  container.style.display = 'none'; 
+                  container.remove(); 
                   changed = true; 
                 } catch (_) {}
               }
@@ -263,7 +263,7 @@
         }
         removeCmsSectionAnywhere(document);
         removeCmsHeaderElements(document);
-        hideAdminInterface(document);
+        removeAdminInterface(document);
 
         const observer = new MutationObserver(() => {
           removeAdminButtons(document);
@@ -272,7 +272,7 @@
           removeAfterGetInTouch(document);
           removeCmsSectionAnywhere(document);
           removeCmsHeaderElements(document);
-          hideAdminInterface(document);
+          removeAdminInterface(document);
           if (tryRemove()) observer.disconnect();
         });
         observer.observe(document.documentElement, { childList: true, subtree: true });
