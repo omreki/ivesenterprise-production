@@ -175,33 +175,44 @@
           return false;
         }
 
-        // Hide CMS header elements: Admin User, Last login, Logout, and navigation tabs
+        // Hide CMS header elements ONLY when CMS title is present (more targeted)
         function removeCmsHeaderElements(root) {
           const appRoot = document.getElementById('root');
           let changed = false;
           
+          // First check if we're in a CMS context by looking for the main title
+          const cmsTitle = root.querySelector('h1, h2, h3, h4');
+          let isCmsContext = false;
+          if (cmsTitle) {
+            const titleText = (cmsTitle.textContent || '').trim();
+            if (/content\s*management\s*system/i.test(titleText)) {
+              isCmsContext = true;
+            }
+          }
+          
+          // Only remove elements if we're in a CMS context
+          if (!isCmsContext) return false;
+          
           // Remove elements containing "Admin User", "Last login: Today", "Logout"
-          const userElements = root.querySelectorAll('*');
+          const userElements = root.querySelectorAll('div, span, p, header, nav');
           userElements.forEach((el) => {
             const txt = (el.textContent || '').trim();
             if (!txt) return;
             if (/admin\s*user|last\s*login\s*:\s*today|logout/i.test(txt)) {
-              const container = el.closest('div, span, p, header, nav') || el;
-              if (container && container !== document.body && container !== appRoot && !container.contains(appRoot)) {
-                try { container.remove(); changed = true; } catch (_) {}
+              if (el !== document.body && el !== appRoot && !el.contains(appRoot)) {
+                try { el.remove(); changed = true; } catch (_) {}
               }
             }
           });
           
           // Remove navigation tabs: Media Gallery, Team Profiles, Content Editor, Settings
-          const navElements = root.querySelectorAll('a, button, [role="tab"], li, div');
+          const navElements = root.querySelectorAll('a, button, [role="tab"], li');
           navElements.forEach((el) => {
             const txt = (el.textContent || '').trim();
             if (!txt) return;
             if (/^(media\s*gallery|team\s*profiles|content\s*editor|settings)$/i.test(txt)) {
-              const container = el.closest('nav, ul, div, section') || el;
-              if (container && container !== document.body && container !== appRoot && !container.contains(appRoot)) {
-                try { container.remove(); changed = true; } catch (_) {}
+              if (el !== document.body && el !== appRoot && !el.contains(appRoot)) {
+                try { el.remove(); changed = true; } catch (_) {}
               }
             }
           });
