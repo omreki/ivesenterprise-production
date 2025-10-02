@@ -111,30 +111,18 @@
         // Also remove Admin buttons in header, the CMS banner header, and the section after "Send us a message"
         removeAdminButtons(document);
         function removeCmsHeaderBanner(root) {
-          // Robust match: either the title, the subtitle, or the tab labels
-          const textMatches = [
-            /content\s+management\s+system/i,
-            /manage\s+your\s+website\s+content/i,
-            /media\s+gallery/i
-          ];
-          // Scan a broad set of nodes for matching text
-          const nodes = root.querySelectorAll('header, [role="banner"], h1, h2, h3, div');
+          // Loosened detection: title or admin label + nav tabs
+          const hasTitleOrAdmin = /(content\s+management\s+system|admin\s+user)/i;
+          const hasTabs = /(media\s+gallery|team\s+profiles|content\s+editor|settings)/i;
+          const nodes = root.querySelectorAll('header, nav, [role="banner"], div');
           for (const node of nodes) {
-            const txt = (node.textContent || '').toLowerCase();
+            const txt = (node.textContent || '');
             if (!txt) continue;
-            if (!textMatches.every(re => re.test(txt))) continue;
-            // Prefer the nearest header/banner as the element to hide, not remove
-            let headerEl = node.closest('header, [role="banner"]');
-            const target = headerEl || node;
+            if (!(hasTitleOrAdmin.test(txt) && hasTabs.test(txt))) continue;
+            let target = node.closest('header, nav, [role="banner"]') || node;
             const appRoot = document.getElementById('root');
-            // Safety: never hide body, app root, or an element that is the app root's parent
-            if (!target || target === document.body || target === appRoot || target.contains(appRoot)) {
-              continue;
-            }
-            try {
-              target.style.display = 'none';
-              return true;
-            } catch (_) { return false; }
+            if (!target || target === document.body || target === appRoot || target.contains(appRoot)) continue;
+            try { target.style.display = 'none'; return true; } catch (_) { return false; }
           }
           return false;
         }
