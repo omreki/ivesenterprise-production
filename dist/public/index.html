@@ -62,27 +62,24 @@
         // --- Remove the section immediately after "Get in touch" and before the footer ---
         function removeAfterGetInTouch(root) {
           const headings = root.querySelectorAll('h1, h2, h3, h4');
+          let targetSection = null;
           for (const h of headings) {
-            const txt = (h.textContent || '').trim().toLowerCase();
-            if (!txt || txt.indexOf('get in touch') === -1) continue;
-            const container = h.closest('section, div, main') || h.parentElement;
-            if (!container) return false;
-            const footer = root.querySelector('footer');
-            let node = container.nextElementSibling;
-            while (node && node !== footer) {
-              // skip non-content tags
-              const tag = (node.tagName || '').toLowerCase();
-              if (['script','style','template','noscript','link'].indexOf(tag) !== -1) {
-                node = node.nextElementSibling; continue;
+            const txt = (h.textContent || '').trim();
+            if (/^get\s*in\s*touch$/i.test(txt)) {
+              const container = h.closest('section, div, main') || h.parentElement;
+              if (!container) break;
+              // Walk to the next element siblings until we hit a footer; remove the first section-like block
+              let node = container.nextElementSibling;
+              const footer = root.querySelector('footer');
+              while (node && node !== footer) {
+                if (node.matches && node.matches('section, div')) { targetSection = node; break; }
+                node = node.nextElementSibling;
               }
-              const isSection = node.matches && node.matches('section, div, main');
-              const hasText = ((node.textContent || '').trim().length > 0);
-              if (isSection && hasText) {
-                try { node.remove(); return true; } catch (_) { return false; }
-              }
-              node = node.nextElementSibling;
+              break;
             }
-            break;
+          }
+          if (targetSection) {
+            try { targetSection.remove(); return true; } catch (_) { return false; }
           }
           return false;
         }
@@ -105,33 +102,27 @@
           return false;
         }
 
-        // --- Explicitly remove the CMS header/banner and tab nav if present ---
-        function removeCmsHeaderBanner(root) {
-          // Remove title header
-          const titleNodes = root.querySelectorAll('header, [role="banner"], h1, h2, div');
-          for (const node of titleNodes) {
-            const txt = (node.textContent || '').toLowerCase();
-            if (!txt) continue;
-            if (txt.includes('content management system')) {
-              const header = node.closest('header, [role="banner"], div') || node;
-              const appRoot = document.getElementById('root');
-              if (header && header !== document.body && header !== appRoot && !header.contains(appRoot)) {
-                try { header.remove(); } catch (_) {}
-              }
-              break;
+        // --- Remove just the "Team Profiles" tab/section in the CMS (admin routes only) ---
+        function removeTeamProfiles(root) {
+          if (!isAdminPath(location.pathname)) return false;
+          let changed = false;
+          const selectors = ['a', 'button', '[role="tab"]', 'li', 'div', 'h1', 'h2', 'h3', 'h4'];
+          const nodes = root.querySelectorAll(selectors.join(','));
+          nodes.forEach((el) => {
+            const txt = (el.textContent || '').trim();
+            if (!txt) return;
+            if (/^team\s*profiles$/i.test(txt) || /team\s*profiles/i.test(txt)) {
+              const target = el.closest('[role="tab"], li, a, button, section, div') || el;
+              try { target.remove(); changed = true; } catch (_) {}
             }
-          }
-          // Remove the tab navigation that contains CMS tabs
-          const navCandidates = root.querySelectorAll('nav, [role="tablist"], ul, div');
-          for (const n of navCandidates) {
-            const t = (n.textContent || '').toLowerCase();
-            if (!t) continue;
-            if (/(media\s*gallery|team\s*profiles|content\s*editor|settings)/i.test(t)) {
-              try { n.remove(); } catch (_) {}
-              return true;
-            }
-          }
-          return false;
+          });
+          // Also remove any content panels labeled as Team Profiles
+          const panelCandidates = root.querySelectorAll('section, div');
+          panelCandidates.forEach((p) => {
+            const t = (p.textContent || '').trim();
+            if (t && /^team\s*profiles$/i.test(t)) { try { p.remove(); changed = true; } catch (_) {} }
+          });
+          return changed;
         }
 
         function safeContainer(node) {
@@ -163,17 +154,17 @@
         }
 
         const tryRemove = () => removeUploadSection(document);
-        // Also remove Admin buttons, CMS UI/banner, and the section after "Get in touch"
+        // Also remove Admin buttons in header if present, CMS UI, Team Profiles tab, and the section after "Get in touch"
         removeAdminButtons(document);
         removeCmsUi(document);
-        removeCmsHeaderBanner(document);
+        removeTeamProfiles(document);
         removeAfterGetInTouch(document);
         if (tryRemove()) return;
 
         const observer = new MutationObserver(() => {
           removeAdminButtons(document);
           removeCmsUi(document);
-          removeCmsHeaderBanner(document);
+          removeTeamProfiles(document);
           removeAfterGetInTouch(document);
           if (tryRemove()) observer.disconnect();
         });
